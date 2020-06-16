@@ -1,0 +1,40 @@
+#!/bin/sh
+
+PN=200 #Numer of Routers
+PS=5100 #Random Seed
+PR=200 #Size of the Environment
+PMD=2 #Max Distance Between Routers (in at least 1D)
+PND=5 #Neighbouring Distance
+
+echo "Initializing the Underlying Network..."
+g++ c01-srg.cpp -o b01.out
+./b01.out $PN $PS $PR $PMD
+echo "Successfully Done!"
+
+echo "Initializing the Input Data for the Optimization Problem..."
+g++ c02-dgwp.cpp -o b02.out
+./b02.out $PN $PND
+echo "Successfully Done!"
+
+echo "Solving the Optimization Problem of Selecting Gateways..."
+./scip.spx -f c03-topo.zpl > log.txt
+echo "Successfully Done!"
+
+echo "Processing Outputs..."
+grep "^X#" log.txt >>xfile.txt
+grep "^Z#" log.txt >>zfile.txt
+sed -i 's/#/ /g' xfile.txt
+sed -i 's/#/ /g' zfile.txt
+sed -i 's/1 \t(obj:0)/ /g' xfile.txt
+sed -i 's/1 	(obj:1)/ /g' zfile.txt
+awk '{print $3}' xfile.txt >> fx.txt
+awk '{print $2}' zfile.txt >> fz.txt
+echo "Successfully Done!"
+
+echo "Showing Results..."
+python3 c04-plot.py
+echo "Successfully Done!"
+
+echo "Cleaning..."
+rm b02.out fx.txt fz.txt log.txt N.txt r.txt b01.out xfile.txt zfile.txt n.txt c.txt xs.txt ys.txt
+echo "Successfully Done!"
